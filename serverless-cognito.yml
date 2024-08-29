@@ -1,0 +1,53 @@
+service: creze-cognito
+
+provider:
+  name: aws
+  runtime: python3.12
+  stage: dev
+  region: us-east-2
+
+resources:
+  Resources:
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}-${self:provider.stage}-user-pool
+        UsernameAttributes:
+          - email
+        AutoVerifiedAttributes:
+          - email
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+            RequireLowercase: false
+            RequireNumbers: false
+            RequireSymbols: false
+            RequireUppercase: false
+        Schema:
+          - Name: email
+            Required: true
+            Mutable: false
+
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: ${self:service}-${self:provider.stage}-user-pool-client
+        UserPoolId:
+          Ref: CognitoUserPool
+        ExplicitAuthFlows:
+          - ALLOW_USER_SRP_AUTH
+          - ALLOW_REFRESH_TOKEN_AUTH
+        GenerateSecret: false
+
+  Outputs:
+    CognitoUserPoolId:
+      Value:
+        Ref: CognitoUserPool
+      Export:
+        Name: CognitoUserPoolId-${self:provider.stage}
+
+    CognitoUserPoolClientId:
+      Value:
+        Ref: CognitoUserPoolClient
+      Export:
+        Name: CognitoUserPoolClientId-${self:provider.stage}

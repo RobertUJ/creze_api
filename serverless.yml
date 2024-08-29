@@ -1,0 +1,182 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: robertuj
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: creze-docs
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: creze-docs-api
+
+provider:
+  name: aws
+  runtime: python3.12
+  stage: dev
+  region: us-east-2
+  environment:
+    BUCKET_NAME: ${self:service}-${self:provider.stage}-bucket
+    COGNITO_USER_POOL_ID: us-east-2_Dk6dCg56D
+    COGNITO_CLIENT_ID: 1n01pklns0cd17licmd7fh6rou
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - s3:PutObject
+        - s3:GetObject
+        - s3:DeleteObject
+      Resource: "arn:aws:s3:::${self:provider.environment.BUCKET_NAME}/*"
+    - Effect: "Allow"
+      Action:
+        - s3:ListBucket
+      Resource: "arn:aws:s3:::${self:provider.environment.BUCKET_NAME}"
+    - Effect: "Allow"
+      Action:
+        - "logs:CreateLogGroup"
+        - "logs:CreateLogStream"
+        - "logs:PutLogEvents"
+      Resource: "arn:aws:logs:${self:provider.region}:*:log-group:/aws/lambda/*:*:*"
+    - Effect: "Allow"
+      Action:
+        - "lambda:InvokeFunction"
+      Resource:
+        - "arn:aws:lambda:${self:provider.region}:764961882162:function:creze-docs-api-dev-reassembleFile"
+  apiGateway:
+    binaryMediaTypes:
+      - 'application/octet-stream'
+      - 'multipart/form-data'
+
+resources:
+  Resources:
+    # Resource S3 bucket to store file uploads
+    DocumentsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.BUCKET_NAME}
+        AccessControl: Private
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - "*"
+              AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+                - DELETE
+              MaxAge: 3000
+    # Resource to create a log group for each lambda function
+    LambdaLogGroup:
+      Type: AWS::Logs::LogGroup
+      Properties:
+        LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}
+        RetentionInDays: 14
+    # Resource to create an alarm if the function errors
+    ErrorAlarm:
+      Type: AWS::CloudWatch::Alarm
+      Properties:
+        AlarmDescription: "Alarm if function errors"
+        Namespace: "AWS/Lambda"
+        MetricName: "Errors"
+        Dimensions:
+          - Name: "FunctionName"
+            Value: { "Ref": "AWS::StackName" }
+        Statistic: "Sum"
+        Period: 300
+        EvaluationPeriods: 1
+        Threshold: 1
+        ComparisonOperator: "GreaterThanOrEqualToThreshold"
+        AlarmActions:
+          - "arn:aws:sns:${self:provider.region}:764961882162:my-sns-topic"
+        TreatMissingData: "notBreaching"
+    # Authorizer for Cognito
+    ApiGatewayAuthorizer:
+      Type: AWS::ApiGateway::Authorizer
+      Properties:
+        Name: CognitoUserPoolAuthorizer
+        Type: "COGNITO_USER_POOLS"
+        IdentitySource: method.request.header.Authorization
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ProviderARNs:
+          - "arn:aws:cognito-idp:${self:provider.region}:764961882162:userpool/${self:provider.environment.COGNITO_USER_POOL_ID}"
+
+  Outputs:
+    BucketName:
+      Description: "Name of the S3 bucket to hold file uploads"
+      Value: ${self:provider.environment.BUCKET_NAME}
+
+
+functions:
+  # Function to use as endpoint for API Gateway
+  hello:
+    handler: src/infrastructure/api/hello.lambda_handler
+    events:
+      - http:
+          path: /hello
+          method: get
+  #  Function to upload a file to S3
+  uploadFragment:
+    handler: src/infrastructure/api/upload_fragment.lambda_handler
+    events:
+      - http:
+          path: /upload_fragment
+          method: post
+          cors: true
+          authorizer:
+              type: COGNITO_USER_POOLS
+              authorizerId:
+                Ref: ApiGatewayAuthorizer
+
+  #  Function to reassemble a file from S3
+  reassembleFile:
+    handler: src/infrastructure/api/reassemble_file.lambda_handler
+    events:
+      - http:
+          path: /reassemble_file
+          method: post
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
+
+ #  Function to list all files in S3
+  listDocuments:
+    handler: src/infrastructure/api/list_files.lambda_handler
+    events:
+      - http:
+          path: /list_files
+          method: get
+          cors: true
+          authorizer:
+            type: COGNITO_USER_POOLS
+            authorizerId:
+              Ref: ApiGatewayAuthorizer
+  #  Sign in function with cognito
+  signIn:
+      handler: src/infrastructure/api/sign_in.lambda_handler
+      events:
+      - http:
+          path: /login
+          method: post
+          cors: true
+  # Sign up function with cognito
+  signUp:
+      handler: src/infrastructure/api/sign_up.lambda_handler
+      events:
+      - http:
+          path: /register
+          method: post
+          cors: true
+  # Confirm sign up function with cognito
+  confirmSignUp:
+      handler: src/infrastructure/api/confirm_sign_up.lambda_handler
+      events:
+      - http:
+          path: /confirm_register
+          method: post
+          cors: true
+plugins:
+  - serverless-python-requirements
+
+custom:
+    pythonRequirements:
+        dockerizePip: true
+        slim: true

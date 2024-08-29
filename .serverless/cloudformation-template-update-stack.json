@@ -1,0 +1,1701 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "The AWS CloudFormation template for this Serverless application",
+  "Resources": {
+    "ServerlessDeploymentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          "ServerSideEncryptionConfiguration": [
+            {
+              "ServerSideEncryptionByDefault": {
+                "SSEAlgorithm": "AES256"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "ServerlessDeploymentBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": {
+          "Ref": "ServerlessDeploymentBucket"
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      },
+                      "/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition"
+                      },
+                      ":s3:::",
+                      {
+                        "Ref": "ServerlessDeploymentBucket"
+                      }
+                    ]
+                  ]
+                }
+              ],
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": false
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "HelloLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/creze-docs-api-dev-hello"
+      }
+    },
+    "UploadFragmentLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/creze-docs-api-dev-uploadFragment"
+      }
+    },
+    "ReassembleFileLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/creze-docs-api-dev-reassembleFile"
+      }
+    },
+    "ListDocumentsLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/creze-docs-api-dev-listDocuments"
+      }
+    },
+    "SignInLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/creze-docs-api-dev-signIn"
+      }
+    },
+    "SignUpLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/creze-docs-api-dev-signUp"
+      }
+    },
+    "ConfirmSignUpLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/creze-docs-api-dev-confirmSignUp"
+      }
+    },
+    "IamRoleLambdaExecution": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "lambda.amazonaws.com"
+                ]
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": {
+              "Fn::Join": [
+                "-",
+                [
+                  "creze-docs-api",
+                  "dev",
+                  "lambda"
+                ]
+              ]
+            },
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:CreateLogGroup",
+                    "logs:TagResource"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/creze-docs-api-dev*:*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/creze-docs-api-dev*:*:*"
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:DeleteObject"
+                  ],
+                  "Resource": "arn:aws:s3:::creze-docs-api-dev-bucket/*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:ListBucket"
+                  ],
+                  "Resource": "arn:aws:s3:::creze-docs-api-dev-bucket"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogGroup",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:us-east-2:*:log-group:/aws/lambda/*:*:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "lambda:InvokeFunction"
+                  ],
+                  "Resource": "arn:aws:lambda:us-east-2:764961882162:function:creze-docs-api-dev-reassembleFile"
+                }
+              ]
+            }
+          }
+        ],
+        "Path": "/",
+        "RoleName": {
+          "Fn::Join": [
+            "-",
+            [
+              "creze-docs-api",
+              "dev",
+              {
+                "Ref": "AWS::Region"
+              },
+              "lambdaRole"
+            ]
+          ]
+        }
+      }
+    },
+    "HelloLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/creze-docs-api/dev/1724941752783-2024-08-29T14:29:12.783Z/creze-docs-api.zip"
+        },
+        "Handler": "src/infrastructure/api/hello.lambda_handler",
+        "Runtime": "python3.12",
+        "FunctionName": "creze-docs-api-dev-hello",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "BUCKET_NAME": "creze-docs-api-dev-bucket",
+            "COGNITO_USER_POOL_ID": "us-east-2_Dk6dCg56D",
+            "COGNITO_CLIENT_ID": "1n01pklns0cd17licmd7fh6rou"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "HelloLogGroup"
+      ]
+    },
+    "UploadFragmentLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/creze-docs-api/dev/1724941752783-2024-08-29T14:29:12.783Z/creze-docs-api.zip"
+        },
+        "Handler": "src/infrastructure/api/upload_fragment.lambda_handler",
+        "Runtime": "python3.12",
+        "FunctionName": "creze-docs-api-dev-uploadFragment",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "BUCKET_NAME": "creze-docs-api-dev-bucket",
+            "COGNITO_USER_POOL_ID": "us-east-2_Dk6dCg56D",
+            "COGNITO_CLIENT_ID": "1n01pklns0cd17licmd7fh6rou"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "UploadFragmentLogGroup"
+      ]
+    },
+    "ReassembleFileLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/creze-docs-api/dev/1724941752783-2024-08-29T14:29:12.783Z/creze-docs-api.zip"
+        },
+        "Handler": "src/infrastructure/api/reassemble_file.lambda_handler",
+        "Runtime": "python3.12",
+        "FunctionName": "creze-docs-api-dev-reassembleFile",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "BUCKET_NAME": "creze-docs-api-dev-bucket",
+            "COGNITO_USER_POOL_ID": "us-east-2_Dk6dCg56D",
+            "COGNITO_CLIENT_ID": "1n01pklns0cd17licmd7fh6rou"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "ReassembleFileLogGroup"
+      ]
+    },
+    "ListDocumentsLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/creze-docs-api/dev/1724941752783-2024-08-29T14:29:12.783Z/creze-docs-api.zip"
+        },
+        "Handler": "src/infrastructure/api/list_files.lambda_handler",
+        "Runtime": "python3.12",
+        "FunctionName": "creze-docs-api-dev-listDocuments",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "BUCKET_NAME": "creze-docs-api-dev-bucket",
+            "COGNITO_USER_POOL_ID": "us-east-2_Dk6dCg56D",
+            "COGNITO_CLIENT_ID": "1n01pklns0cd17licmd7fh6rou"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "ListDocumentsLogGroup"
+      ]
+    },
+    "SignInLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/creze-docs-api/dev/1724941752783-2024-08-29T14:29:12.783Z/creze-docs-api.zip"
+        },
+        "Handler": "src/infrastructure/api/sign_in.lambda_handler",
+        "Runtime": "python3.12",
+        "FunctionName": "creze-docs-api-dev-signIn",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "BUCKET_NAME": "creze-docs-api-dev-bucket",
+            "COGNITO_USER_POOL_ID": "us-east-2_Dk6dCg56D",
+            "COGNITO_CLIENT_ID": "1n01pklns0cd17licmd7fh6rou"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "SignInLogGroup"
+      ]
+    },
+    "SignUpLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/creze-docs-api/dev/1724941752783-2024-08-29T14:29:12.783Z/creze-docs-api.zip"
+        },
+        "Handler": "src/infrastructure/api/sign_up.lambda_handler",
+        "Runtime": "python3.12",
+        "FunctionName": "creze-docs-api-dev-signUp",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "BUCKET_NAME": "creze-docs-api-dev-bucket",
+            "COGNITO_USER_POOL_ID": "us-east-2_Dk6dCg56D",
+            "COGNITO_CLIENT_ID": "1n01pklns0cd17licmd7fh6rou"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "SignUpLogGroup"
+      ]
+    },
+    "ConfirmSignUpLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ServerlessDeploymentBucket"
+          },
+          "S3Key": "serverless/creze-docs-api/dev/1724941752783-2024-08-29T14:29:12.783Z/creze-docs-api.zip"
+        },
+        "Handler": "src/infrastructure/api/confirm_sign_up.lambda_handler",
+        "Runtime": "python3.12",
+        "FunctionName": "creze-docs-api-dev-confirmSignUp",
+        "MemorySize": 1024,
+        "Timeout": 6,
+        "Environment": {
+          "Variables": {
+            "BUCKET_NAME": "creze-docs-api-dev-bucket",
+            "COGNITO_USER_POOL_ID": "us-east-2_Dk6dCg56D",
+            "COGNITO_CLIENT_ID": "1n01pklns0cd17licmd7fh6rou"
+          }
+        },
+        "Role": {
+          "Fn::GetAtt": [
+            "IamRoleLambdaExecution",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "ConfirmSignUpLogGroup"
+      ]
+    },
+    "HelloLambdaVersioniie3uIV6f1m9eZKlKDPsQ6fxSQbf0AYhujUws90Gfv0": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "HelloLambdaFunction"
+        },
+        "CodeSha256": "xp4sIx6nSruUSlxiRDMa8phb5XLSWyQrqVChosA5B58="
+      }
+    },
+    "UploadFragmentLambdaVersionNABKOM6e0oSdRMOk4gkD7tqYzKPok4SXGyF8lx4tEc": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "UploadFragmentLambdaFunction"
+        },
+        "CodeSha256": "xp4sIx6nSruUSlxiRDMa8phb5XLSWyQrqVChosA5B58="
+      }
+    },
+    "ReassembleFileLambdaVersionRNzTDLQgoaJh895GZXBhFaICGWUmulHYJrg86lszLQ": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "ReassembleFileLambdaFunction"
+        },
+        "CodeSha256": "xp4sIx6nSruUSlxiRDMa8phb5XLSWyQrqVChosA5B58="
+      }
+    },
+    "ListDocumentsLambdaVersionjRb4FxGGq9rJ2UbYiV00mjKd64rJzYcefJjQXoa4": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "ListDocumentsLambdaFunction"
+        },
+        "CodeSha256": "xp4sIx6nSruUSlxiRDMa8phb5XLSWyQrqVChosA5B58="
+      }
+    },
+    "SignInLambdaVersionnbCje03q8veuLqFITY1FcaD1M5zhaIfLF4p26MySlE4": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "SignInLambdaFunction"
+        },
+        "CodeSha256": "xp4sIx6nSruUSlxiRDMa8phb5XLSWyQrqVChosA5B58="
+      }
+    },
+    "SignUpLambdaVersion84r87vDyhZG6c7AEplD3A53V5Vf38SMvwCmjpnOkp4": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "SignUpLambdaFunction"
+        },
+        "CodeSha256": "xp4sIx6nSruUSlxiRDMa8phb5XLSWyQrqVChosA5B58="
+      }
+    },
+    "ConfirmSignUpLambdaVersiono67BqsmRXjWOER9zAbLpkwRYPg1S8HqSA4tiKROCk": {
+      "Type": "AWS::Lambda::Version",
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "FunctionName": {
+          "Ref": "ConfirmSignUpLambdaFunction"
+        },
+        "CodeSha256": "xp4sIx6nSruUSlxiRDMa8phb5XLSWyQrqVChosA5B58="
+      }
+    },
+    "ApiGatewayRestApi": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "Name": "dev-creze-docs-api",
+        "BinaryMediaTypes": [
+          "application/octet-stream",
+          "multipart/form-data"
+        ],
+        "EndpointConfiguration": {
+          "Types": [
+            "EDGE"
+          ]
+        },
+        "Policy": ""
+      }
+    },
+    "ApiGatewayResourceHello": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "hello",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceUploadfragment": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "upload_fragment",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceReassemblefile": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "reassemble_file",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceListfiles": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "list_files",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceLogin": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "login",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceRegister": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "register",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayResourceConfirmregister": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ApiGatewayRestApi",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "confirm_register",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodUploadfragmentOptions": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true
+            },
+            "ResponseModels": {}
+          }
+        ],
+        "RequestParameters": {},
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{statusCode:200}"
+          },
+          "ContentHandling": "CONVERT_TO_TEXT",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Origin": "'*'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ]
+        },
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceUploadfragment"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodReassemblefileOptions": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true
+            },
+            "ResponseModels": {}
+          }
+        ],
+        "RequestParameters": {},
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{statusCode:200}"
+          },
+          "ContentHandling": "CONVERT_TO_TEXT",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Origin": "'*'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ]
+        },
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceReassemblefile"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodListfilesOptions": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true
+            },
+            "ResponseModels": {}
+          }
+        ],
+        "RequestParameters": {},
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{statusCode:200}"
+          },
+          "ContentHandling": "CONVERT_TO_TEXT",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Origin": "'*'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,GET'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ]
+        },
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceListfiles"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodLoginOptions": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true
+            },
+            "ResponseModels": {}
+          }
+        ],
+        "RequestParameters": {},
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{statusCode:200}"
+          },
+          "ContentHandling": "CONVERT_TO_TEXT",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Origin": "'*'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ]
+        },
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceLogin"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodRegisterOptions": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true
+            },
+            "ResponseModels": {}
+          }
+        ],
+        "RequestParameters": {},
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{statusCode:200}"
+          },
+          "ContentHandling": "CONVERT_TO_TEXT",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Origin": "'*'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ]
+        },
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceRegister"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodConfirmregisterOptions": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "AuthorizationType": "NONE",
+        "HttpMethod": "OPTIONS",
+        "MethodResponses": [
+          {
+            "StatusCode": "200",
+            "ResponseParameters": {
+              "method.response.header.Access-Control-Allow-Origin": true,
+              "method.response.header.Access-Control-Allow-Headers": true,
+              "method.response.header.Access-Control-Allow-Methods": true
+            },
+            "ResponseModels": {}
+          }
+        ],
+        "RequestParameters": {},
+        "Integration": {
+          "Type": "MOCK",
+          "RequestTemplates": {
+            "application/json": "{statusCode:200}"
+          },
+          "ContentHandling": "CONVERT_TO_TEXT",
+          "IntegrationResponses": [
+            {
+              "StatusCode": "200",
+              "ResponseParameters": {
+                "method.response.header.Access-Control-Allow-Origin": "'*'",
+                "method.response.header.Access-Control-Allow-Headers": "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,X-Amz-User-Agent,X-Amzn-Trace-Id'",
+                "method.response.header.Access-Control-Allow-Methods": "'OPTIONS,POST'"
+              },
+              "ResponseTemplates": {
+                "application/json": ""
+              }
+            }
+          ]
+        },
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceConfirmregister"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        }
+      }
+    },
+    "ApiGatewayMethodHelloGet": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "GET",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceHello"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "HelloLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "HelloLambdaPermissionApiGateway"
+      ]
+    },
+    "ApiGatewayMethodUploadfragmentPost": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "POST",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceUploadfragment"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "COGNITO_USER_POOLS",
+        "AuthorizerId": {
+          "Ref": "ApiGatewayAuthorizer"
+        },
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "UploadFragmentLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "UploadFragmentLambdaPermissionApiGateway"
+      ]
+    },
+    "ApiGatewayMethodReassemblefilePost": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "POST",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceReassemblefile"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "COGNITO_USER_POOLS",
+        "AuthorizerId": {
+          "Ref": "ApiGatewayAuthorizer"
+        },
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ReassembleFileLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "ReassembleFileLambdaPermissionApiGateway"
+      ]
+    },
+    "ApiGatewayMethodListfilesGet": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "GET",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceListfiles"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "COGNITO_USER_POOLS",
+        "AuthorizerId": {
+          "Ref": "ApiGatewayAuthorizer"
+        },
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ListDocumentsLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "ListDocumentsLambdaPermissionApiGateway"
+      ]
+    },
+    "ApiGatewayMethodLoginPost": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "POST",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceLogin"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "SignInLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "SignInLambdaPermissionApiGateway"
+      ]
+    },
+    "ApiGatewayMethodRegisterPost": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "POST",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceRegister"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "SignUpLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "SignUpLambdaPermissionApiGateway"
+      ]
+    },
+    "ApiGatewayMethodConfirmregisterPost": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "POST",
+        "RequestParameters": {},
+        "ResourceId": {
+          "Ref": "ApiGatewayResourceConfirmregister"
+        },
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ApiKeyRequired": false,
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ConfirmSignUpLambdaFunction",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        },
+        "MethodResponses": []
+      },
+      "DependsOn": [
+        "ConfirmSignUpLambdaPermissionApiGateway"
+      ]
+    },
+    "ApiGatewayDeployment1724941743365": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "StageName": "dev"
+      },
+      "DependsOn": [
+        "ApiGatewayMethodUploadfragmentOptions",
+        "ApiGatewayMethodReassemblefileOptions",
+        "ApiGatewayMethodListfilesOptions",
+        "ApiGatewayMethodLoginOptions",
+        "ApiGatewayMethodRegisterOptions",
+        "ApiGatewayMethodConfirmregisterOptions",
+        "ApiGatewayMethodHelloGet",
+        "ApiGatewayMethodUploadfragmentPost",
+        "ApiGatewayMethodReassemblefilePost",
+        "ApiGatewayMethodListfilesGet",
+        "ApiGatewayMethodLoginPost",
+        "ApiGatewayMethodRegisterPost",
+        "ApiGatewayMethodConfirmregisterPost"
+      ]
+    },
+    "HelloLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "HelloLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "UploadFragmentLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "UploadFragmentLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "ReassembleFileLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ReassembleFileLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "ListDocumentsLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ListDocumentsLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "SignInLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "SignInLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "SignUpLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "SignUpLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "ConfirmSignUpLambdaPermissionApiGateway": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ConfirmSignUpLambdaFunction",
+            "Arn"
+          ]
+        },
+        "Action": "lambda:InvokeFunction",
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ApiGatewayRestApi"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      }
+    },
+    "DocumentsBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": "creze-docs-api-dev-bucket",
+        "AccessControl": "Private",
+        "CorsConfiguration": {
+          "CorsRules": [
+            {
+              "AllowedOrigins": [
+                "*"
+              ],
+              "AllowedHeaders": [
+                "*"
+              ],
+              "AllowedMethods": [
+                "GET",
+                "PUT",
+                "POST",
+                "DELETE"
+              ],
+              "MaxAge": 3000
+            }
+          ]
+        }
+      }
+    },
+    "LambdaLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/aws/lambda/creze-docs-api-dev",
+        "RetentionInDays": 14
+      }
+    },
+    "ErrorAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmDescription": "Alarm if function errors",
+        "Namespace": "AWS/Lambda",
+        "MetricName": "Errors",
+        "Dimensions": [
+          {
+            "Name": "FunctionName",
+            "Value": {
+              "Ref": "AWS::StackName"
+            }
+          }
+        ],
+        "Statistic": "Sum",
+        "Period": 300,
+        "EvaluationPeriods": 1,
+        "Threshold": 1,
+        "ComparisonOperator": "GreaterThanOrEqualToThreshold",
+        "AlarmActions": [
+          "arn:aws:sns:us-east-2:764961882162:my-sns-topic"
+        ],
+        "TreatMissingData": "notBreaching"
+      }
+    },
+    "ApiGatewayAuthorizer": {
+      "Type": "AWS::ApiGateway::Authorizer",
+      "Properties": {
+        "Name": "CognitoUserPoolAuthorizer",
+        "Type": "COGNITO_USER_POOLS",
+        "IdentitySource": "method.request.header.Authorization",
+        "RestApiId": {
+          "Ref": "ApiGatewayRestApi"
+        },
+        "ProviderARNs": [
+          "arn:aws:cognito-idp:us-east-2:764961882162:userpool/us-east-2_Dk6dCg56D"
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "ServerlessDeploymentBucketName": {
+      "Value": {
+        "Ref": "ServerlessDeploymentBucket"
+      },
+      "Export": {
+        "Name": "sls-creze-docs-api-dev-ServerlessDeploymentBucketName"
+      }
+    },
+    "HelloLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "HelloLambdaVersioniie3uIV6f1m9eZKlKDPsQ6fxSQbf0AYhujUws90Gfv0"
+      },
+      "Export": {
+        "Name": "sls-creze-docs-api-dev-HelloLambdaFunctionQualifiedArn"
+      }
+    },
+    "UploadFragmentLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "UploadFragmentLambdaVersionNABKOM6e0oSdRMOk4gkD7tqYzKPok4SXGyF8lx4tEc"
+      },
+      "Export": {
+        "Name": "sls-creze-docs-api-dev-UploadFragmentLambdaFunctionQualifiedArn"
+      }
+    },
+    "ReassembleFileLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "ReassembleFileLambdaVersionRNzTDLQgoaJh895GZXBhFaICGWUmulHYJrg86lszLQ"
+      },
+      "Export": {
+        "Name": "sls-creze-docs-api-dev-ReassembleFileLambdaFunctionQualifiedArn"
+      }
+    },
+    "ListDocumentsLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "ListDocumentsLambdaVersionjRb4FxGGq9rJ2UbYiV00mjKd64rJzYcefJjQXoa4"
+      },
+      "Export": {
+        "Name": "sls-creze-docs-api-dev-ListDocumentsLambdaFunctionQualifiedArn"
+      }
+    },
+    "SignInLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "SignInLambdaVersionnbCje03q8veuLqFITY1FcaD1M5zhaIfLF4p26MySlE4"
+      },
+      "Export": {
+        "Name": "sls-creze-docs-api-dev-SignInLambdaFunctionQualifiedArn"
+      }
+    },
+    "SignUpLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "SignUpLambdaVersion84r87vDyhZG6c7AEplD3A53V5Vf38SMvwCmjpnOkp4"
+      },
+      "Export": {
+        "Name": "sls-creze-docs-api-dev-SignUpLambdaFunctionQualifiedArn"
+      }
+    },
+    "ConfirmSignUpLambdaFunctionQualifiedArn": {
+      "Description": "Current Lambda function version",
+      "Value": {
+        "Ref": "ConfirmSignUpLambdaVersiono67BqsmRXjWOER9zAbLpkwRYPg1S8HqSA4tiKROCk"
+      },
+      "Export": {
+        "Name": "sls-creze-docs-api-dev-ConfirmSignUpLambdaFunctionQualifiedArn"
+      }
+    },
+    "ServiceEndpoint": {
+      "Description": "URL of the service endpoint",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "ApiGatewayRestApi"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix"
+            },
+            "/dev"
+          ]
+        ]
+      },
+      "Export": {
+        "Name": "sls-creze-docs-api-dev-ServiceEndpoint"
+      }
+    },
+    "BucketName": {
+      "Description": "Name of the S3 bucket to hold file uploads",
+      "Value": "creze-docs-api-dev-bucket"
+    }
+  }
+}
